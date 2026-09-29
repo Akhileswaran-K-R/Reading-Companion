@@ -53,6 +53,9 @@ export const updateLibrary = (bookId, status) => fetchApi('/library/', {
 
 export const getChapters = (bookId) => fetchApi(`/books/${bookId}/chapters`);
 
+export const getBookContent = (bookId, chapter) => 
+  fetchApi(`/books/${bookId}/content` + (chapter ? `?chapter=${encodeURIComponent(chapter)}` : ''));
+
 export const getBookmark = (bookId) => fetchApi(`/bookmarks/${bookId}`);
 
 export const updateBookmark = (bookId, data) => fetchApi(`/bookmarks/${bookId}`, {

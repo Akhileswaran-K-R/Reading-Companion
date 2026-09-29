@@ -93,9 +93,36 @@ def get_chapters(book_id: int, db: Session = Depends(get_db)):
         Chunk.chapter,
         func.min(Chunk.chunk_index).label('start_chunk'),
         func.max(Chunk.chunk_index).label('end_chunk')
-    ).filter(Chunk.book_id == book_id, Chunk.chapter != None).group_by(Chunk.chapter).all()
+    ).filter(Chunk.book_id == book_id, Chunk.chapter != None).group_by(Chunk.chapter).order_by(func.min(Chunk.chunk_index)).all()
     
     return [
         {"chapter": c.chapter, "start_chunk": c.start_chunk, "end_chunk": c.end_chunk}
         for c in chapters
     ]
+
+@router.get("/{book_id}/content")
+def get_book_content(book_id: int, chapter: str = None, db: Session = Depends(get_db)):
+    query = db.query(Chunk).filter(Chunk.book_id == book_id)
+    if chapter:
+        query = query.filter(Chunk.chapter == chapter)
+    chunks = query.order_by(Chunk.chunk_index).all()
+    
+    processed = []
+    for i, c in enumerate(chunks):
+        words = c.text.split()
+        text = c.text
+        
+        if i > 0 and c.chapter == chunks[i-1].chapter and c.page == chunks[i-1].page:
+            text = " ".join(words[settings.CHUNK_OVERLAP_WORDS:])
+            print(f"Stripped overlap for chunk {c.chunk_index} on page {c.page}")
+        else:
+            print(f"Did NOT strip overlap for chunk {c.chunk_index}: chapter={c.chapter}, page={c.page}")
+                
+        processed.append({
+            "chunk_index": c.chunk_index,
+            "chapter": c.chapter,
+            "page": c.page,
+            "text": text
+        })
+        
+    return processed

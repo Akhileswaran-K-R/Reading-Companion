@@ -28,6 +28,7 @@ class BookmarkUpdate(BaseModel):
     chapter: Optional[str] = None
     page: Optional[int] = None
     position: Optional[float] = None
+    chunk_index: Optional[int] = None
 
 class BookmarkResponse(BaseModel):
     chunk_index: int

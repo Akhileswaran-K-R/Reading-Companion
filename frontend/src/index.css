@@ -1,8 +1,101 @@
 @import "tailwindcss";
 
+@theme {
+  --color-surface-container-high: #f2e6e2;
+  --color-surface-container-highest: #ece0dd;
+  --color-error: #ba1a1a;
+  --color-secondary-fixed: #d6e7d7;
+  --color-tertiary-fixed-dim: #d0c4bb;
+  --color-on-primary: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-surface-bright: #fff8f6;
+  --color-tertiary-fixed: #ede0d7;
+  --color-on-tertiary-container: #fcefe5;
+  --color-on-secondary: #ffffff;
+  --color-on-primary-fixed: #400200;
+  --color-outline: #8a716d;
+  --color-on-error: #ffffff;
+  --color-secondary: #536255;
+  --color-tertiary: #5c544d;
+  --color-on-surface-variant: #57423e;
+  --color-primary: #983224;
+  --color-on-tertiary: #ffffff;
+  --color-on-primary-container: #ffedea;
+  --color-inverse-surface: #352f2d;
+  --color-surface-container-low: #fdf1ed;
+  --color-primary-fixed-dim: #ffb4a7;
+  --color-on-secondary-fixed-variant: #3c4a3e;
+  --color-surface-variant: #ece0dd;
+  --color-on-secondary-container: #59685b;
+  --color-primary-fixed: #ffdad4;
+  --color-on-error-container: #93000a;
+  --color-inverse-on-surface: #faeeeb;
+  --color-surface: #fff8f6;
+  --color-on-tertiary-fixed: #201a15;
+  --color-on-background: #201a18;
+  --color-surface-tint: #a43b2c;
+  --color-outline-variant: #dec0bb;
+  --color-surface-dim: #e3d8d4;
+  --color-secondary-fixed-dim: #bbcbbb;
+  --color-background: #fff8f6;
+  --color-primary-container: #b84a39;
+  --color-secondary-container: #d6e7d7;
+  --color-tertiary-container: #756c64;
+  --color-on-secondary-fixed: #111e15;
+  --color-on-surface: #201a18;
+  --color-inverse-primary: #ffb4a7;
+  --color-on-tertiary-fixed-variant: #4d453f;
+  --color-on-primary-fixed-variant: #842417;
+  --color-surface-container: #f7ebe8;
+  --color-surface-container-lowest: #ffffff;
+
+  --font-body-lg: "Plus Jakarta Sans", sans-serif;
+  --font-headline-sm: "EB Garamond", serif;
+  --font-headline-md: "EB Garamond", serif;
+  --font-display-lg: "EB Garamond", serif;
+  --font-display-lg-mobile: "EB Garamond", serif;
+  --font-label-eyebrow: "Plus Jakarta Sans", sans-serif;
+  --font-headline-lg: "EB Garamond", serif;
+  --font-title-editorial: "EB Garamond", serif;
+  --font-label-sm: "Plus Jakarta Sans", sans-serif;
+  --font-label-md: "Plus Jakarta Sans", sans-serif;
+  --font-body-md: "Plus Jakarta Sans", sans-serif;
+  --font-body-sm: "Plus Jakarta Sans", sans-serif;
+  --font-sans: "Plus Jakarta Sans", sans-serif;
+  --font-serif: "EB Garamond", serif;
+
+  --spacing-space-xs: 0.25rem;
+  --spacing-margin-desktop: 3rem;
+  --spacing-space-sm: 0.5rem;
+  --spacing-space-lg: 1.5rem;
+  --spacing-gutter: 1rem;
+  --spacing-space-xl: 2rem;
+  --spacing-space-md: 1rem;
+  --spacing-margin: 1.25rem;
+}
+
+@layer utilities {
+  .text-display-lg { font-size: 3.5rem; line-height: 4rem; font-weight: 400; }
+  .text-headline-lg { font-size: 2rem; line-height: 2.5rem; font-weight: 400; }
+  .text-headline-md { font-size: 1.75rem; line-height: 2.25rem; font-weight: 400; }
+  .text-headline-sm { font-size: 1.5rem; line-height: 2rem; font-weight: 400; }
+  .text-title-editorial { font-size: 1.125rem; line-height: 1.75rem; font-weight: 400; }
+  .text-body-lg { font-size: 1.125rem; line-height: 1.75rem; font-weight: 400; }
+  .text-body-md { font-size: 1rem; line-height: 1.5rem; font-weight: 400; }
+  .text-body-sm { font-size: 0.875rem; line-height: 1.25rem; font-weight: 400; }
+  .text-label-md { font-size: 0.875rem; line-height: 1.25rem; font-weight: 500; }
+  .text-label-sm { font-size: 0.75rem; line-height: 1rem; font-weight: 500; }
+  .text-label-eyebrow { font-size: 0.75rem; line-height: 1rem; font-weight: 600; letter-spacing: 0.1em; }
+}
+
 body {
-  font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
-  background-color: #f3f4f6;
+  font-family: 'EB Garamond', system-ui, sans-serif;
+  background-color: var(--color-surface);
   margin: 0;
   padding: 0;
+  overscroll-behavior: none;
+}
+
+::-webkit-scrollbar {
+  display: none;
 }

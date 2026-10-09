@@ -10,7 +10,6 @@ async def search_gutendex(query: str):
             return response.json()
     except httpx.RequestError as e:
         # Return empty list or graceful fallback if the external API is completely down/timing out
-        print(f"Gutendex API error: {e}")
         return {"results": []}
 
 async def get_book_details(gutenberg_id: int):

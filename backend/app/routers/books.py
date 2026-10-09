@@ -114,9 +114,6 @@ def get_book_content(book_id: int, chapter: str = None, db: Session = Depends(ge
         
         if i > 0 and c.chapter == chunks[i-1].chapter and c.page == chunks[i-1].page:
             text = " ".join(words[settings.CHUNK_OVERLAP_WORDS:])
-            print(f"Stripped overlap for chunk {c.chunk_index} on page {c.page}")
-        else:
-            print(f"Did NOT strip overlap for chunk {c.chunk_index}: chapter={c.chapter}, page={c.page}")
                 
         processed.append({
             "chunk_index": c.chunk_index,

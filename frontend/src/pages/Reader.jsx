@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getChapters, getBookmark, updateBookmark, askQuestion, getLibrary, getBookContent } from '../api/client';
 import { ChevronLeft, Send, Bookmark, Info, Loader, Book, BookOpen, MessageSquare, BookText } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
+
 
 export default function Reader() {
   const { bookId } = useParams();
@@ -321,7 +321,7 @@ export default function Reader() {
                   messages.map((m, i) => (
                     <div key={i} className={`flex flex-col max-w-[85%] ${m.role === 'user' ? 'self-end ml-auto' : 'self-start mr-auto'}`}>
                       <div className={`p-4 rounded-2xl ${m.role === 'user' ? 'bg-blue-600 text-white rounded-br-none' : 'bg-gray-100 text-gray-800 rounded-bl-none'}`}>
-                        {m.role === 'user' ? m.content : <ReactMarkdown className="prose prose-sm max-w-none prose-blue">{m.content}</ReactMarkdown>}
+                        {m.role === 'user' ? m.content : <div className="prose prose-sm max-w-none prose-blue whitespace-pre-wrap">{String(m.content)}</div>}
                       </div>
                       {m.citations && m.citations.length > 0 && (
                         <div className="mt-2 text-xs text-gray-500 bg-gray-50 p-2 rounded-lg border border-gray-200 self-start">

@@ -3,10 +3,7 @@ from sentence_transformers import SentenceTransformer, CrossEncoder
 from app.config import settings
 
 # Load model once at startup
-print(f"Loading embedding model: {settings.EMBEDDING_MODEL}")
 embedding_model = SentenceTransformer(settings.EMBEDDING_MODEL)
-
-print(f"Loading reranker model: {settings.RERANKER_MODEL}")
 reranker_model = CrossEncoder(settings.RERANKER_MODEL)
 
 def get_embeddings(texts: list[str]):

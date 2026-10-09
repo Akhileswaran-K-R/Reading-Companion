@@ -60,6 +60,5 @@ async def ingest_book(db: Session, book_id: int):
         
         create_and_save_index(book.id, embeddings, chunk_indices)
     except Exception as e:
-        print(f"Error ingesting book {book_id}: {e}")
         book.status = "error"
         db.commit()

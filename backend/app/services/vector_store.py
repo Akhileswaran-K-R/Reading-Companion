@@ -31,3 +31,16 @@ def search_index(book_id: int, query_embedding: np.ndarray, top_k: int, max_chun
     distances, indices = index.search(query_2d, top_k, params=params)
     
     return [int(idx) for idx in indices[0] if idx != -1]
+
+def search_index_range(book_id: int, query_embedding: np.ndarray, top_k: int, min_chunk_index: int, max_chunk_index: int):
+    index_path = get_index_path(book_id)
+    if not os.path.exists(index_path):
+        return []
+    
+    index = faiss.read_index(index_path)
+    sel = faiss.IDSelectorRange(int(min_chunk_index), int(max_chunk_index) + 1)
+    params = faiss.SearchParameters(sel=sel)
+    
+    query_2d = np.array([query_embedding], dtype=np.float32)
+    distances, indices = index.search(query_2d, top_k, params=params)
+    return [int(idx) for idx in indices[0] if idx != -1]

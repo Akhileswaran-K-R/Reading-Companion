@@ -39,3 +39,11 @@ class Bookmark(Base):
     user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
     book_id = Column(Integer, ForeignKey("books.id"), primary_key=True)
     chunk_index = Column(Integer)
+
+class BookSummary(Base):
+    __tablename__ = "book_summaries"
+    id = Column(Integer, primary_key=True, index=True)
+    book_id = Column(Integer, ForeignKey("books.id"), unique=True, index=True)
+    overall_summary = Column(Text, nullable=False)
+    recall_points = Column(Text, nullable=False)  # JSON-encoded chapter recall points
+    created_at = Column(String, nullable=True)

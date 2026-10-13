@@ -10,11 +10,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "lucide-react": "^1.48.0",
+    "canvas-confetti": "^1.9.4",
+    "lucide-react": "^1.56.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-markdown": "^10.1.0",
-    "react-router-dom": "^7.18.4"
+    "react-router-dom": "^7.18.4",
+    "three": "^0.186.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",

@@ -54,7 +54,7 @@ async def add_book(book_in: BookCreate, background_tasks: BackgroundTasks, db: S
     db.commit()
     db.refresh(book)
     
-    background_tasks.add_task(ingest_book, db, book.id)
+    background_tasks.add_task(ingest_book, book.id)
     return book
 
 @router.post("/upload", response_model=BookResponse)
@@ -84,7 +84,7 @@ async def upload_book(background_tasks: BackgroundTasks, file: UploadFile = File
     db.commit()
     db.refresh(book)
     
-    background_tasks.add_task(ingest_book, db, book.id)
+    background_tasks.add_task(ingest_book, book.id)
     return book
 
 @router.get("/{book_id}/chapters")

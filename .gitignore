@@ -1,0 +1,36 @@
+# Python & Environments
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+backend/venv/
+.pytest_cache/
+backend/.pytest_cache/
+
+# Node & Frontend Build
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+
+# Database and indexes
+backend/data/
+*.db
+*.sqlite
+*.sqlite3
+*.faiss
+*.index
+
+# Environment
+.env
+backend/.env
+frontend/.env
+
+# IDE and tool artifacts
+.vscode/
+.idea/
+.agent/
+.claude/
+.cursor/
+.gemini/
+stitch_bookie_reading_companion_app/

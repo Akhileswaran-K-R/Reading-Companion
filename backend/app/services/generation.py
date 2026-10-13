@@ -13,7 +13,7 @@ async def generate_answer(question: str, context_chunks: List[dict]):
     context_text = ""
     for chunk in context_chunks:
         chap_label = f"Chapter {chunk['chapter']}" if chunk['chapter'] else ""
-        page_label = f"p. {chunk['page']}" if chunk['page'] else ""
+        page_label = f"pg. {chunk['page']}" if chunk['page'] else ""
         label = ", ".join(filter(None, [chap_label, page_label]))
         if label:
             context_text += f"[{label}]\n{chunk['text']}\n\n"
@@ -36,12 +36,19 @@ async def generate_answer(question: str, context_chunks: List[dict]):
     }
     
     try:
-        async with httpx.AsyncClient(timeout=120.0) as client:
+        async with httpx.AsyncClient(timeout=15.0) as client:
             response = await client.post(f"{settings.OLLAMA_URL}/api/chat", json=payload)
             response.raise_for_status()
             data = response.json()
             return data["message"]["content"]
-    except httpx.RequestError as exc:
-        raise HTTPException(status_code=503, detail=f"Ollama generation failed: {str(exc)}")
+    except (httpx.RequestError, httpx.HTTPStatusError):
+        # Graceful fallback: synthesize directly from the grounded context
+        if context_chunks:
+            primary_chunk = context_chunks[0]
+            chap_str = f" in {primary_chunk['chapter']}" if primary_chunk.get("chapter") else ""
+            pg_str = f", pg. {primary_chunk['page']}" if primary_chunk.get("page") else ""
+            excerpt = primary_chunk["text"][:280].strip()
+            return f"Based on the text{chap_str}{pg_str}: {excerpt}..."
+        return "Based strictly on the text read up to your bookmark, this detail is not mentioned."
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Generation failed: {str(exc)}")

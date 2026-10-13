@@ -32,6 +32,8 @@ class BookmarkUpdate(BaseModel):
 
 class BookmarkResponse(BaseModel):
     chunk_index: int
+    chapter: Optional[str] = None
+    page: Optional[int] = None
 
 class QAQuery(BaseModel):
     question: str
@@ -44,3 +46,15 @@ class Citation(BaseModel):
 class QAResponse(BaseModel):
     answer: str
     citations: List[Citation]
+
+class ChapterRecallPoint(BaseModel):
+    chapter: str
+    points: List[str]
+
+class SummaryResponse(BaseModel):
+    book_id: int
+    title: Optional[str] = None
+    author: Optional[str] = None
+    overall_summary: str
+    recall_points: List[ChapterRecallPoint]
+    cached: bool = True

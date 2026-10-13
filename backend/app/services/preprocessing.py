@@ -35,7 +35,7 @@ def preprocess_gutenberg(text: str):
             start = matches[i].start()
             end = matches[i+1].start() if i + 1 < len(matches) else len(text)
             chapter_title = matches[i].group().strip()
-            chapter_text = text[start:end].strip()
+            chapter_text = text[matches[i].end():end].strip()
             chapters_content.append({"chapter": chapter_title, "text": chapter_text})
             
     pages_data = []

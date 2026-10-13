@@ -12,9 +12,15 @@ def get_bookmark(book_id: int, db: Session = Depends(get_db)):
     bm = db.query(Bookmark).filter(Bookmark.user_id == DEMO_USER_ID, Bookmark.book_id == book_id).first()
     if not bm:
         raise HTTPException(status_code=404, detail="Bookmark not found")
-    return {"chunk_index": bm.chunk_index}
+    chunk = db.query(Chunk).filter(Chunk.book_id == book_id, Chunk.chunk_index == bm.chunk_index).first()
+    return {
+        "chunk_index": bm.chunk_index,
+        "chapter": chunk.chapter if chunk else None,
+        "page": chunk.page if chunk else None,
+    }
 
 @router.put("/{book_id}", response_model=BookmarkResponse)
+@router.post("/{book_id}", response_model=BookmarkResponse)
 def update_bookmark(book_id: int, update: BookmarkUpdate, db: Session = Depends(get_db)):
     if update.chunk_index is not None:
         target_chunk_index = update.chunk_index
@@ -44,4 +50,10 @@ def update_bookmark(book_id: int, update: BookmarkUpdate, db: Session = Depends(
         bm.chunk_index = target_chunk_index
         
     db.commit()
-    return {"chunk_index": bm.chunk_index}
+
+    chunk = db.query(Chunk).filter(Chunk.book_id == book_id, Chunk.chunk_index == bm.chunk_index).first()
+    return {
+        "chunk_index": bm.chunk_index,
+        "chapter": chunk.chapter if chunk else None,
+        "page": chunk.page if chunk else None,
+    }

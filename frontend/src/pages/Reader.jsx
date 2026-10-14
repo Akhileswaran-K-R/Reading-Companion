@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { getChapters, getBookmark, updateBookmark, askQuestion, getLibrary, getBookContent } from '../api/client';
 import { ChevronLeft, Send, Bookmark, ShieldCheck, Sparkles, BookOpen } from 'lucide-react';
 

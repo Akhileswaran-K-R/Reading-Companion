@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Search, Upload, BookOpen, Plus, Sparkles, CheckCircle2, Loader2 } from 'lucide-react';
+import { ChevronLeft, Search, Upload, BookOpen, Plus, CheckCircle2, Loader2 } from 'lucide-react';
 import { searchBooks, addBook, uploadBook, updateLibrary } from '../api/client';
 
 export default function IngestView({ onReloadLibrary }) {

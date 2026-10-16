@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, Sparkles, BookOpen, Layers, CheckCircle2, RotateCw, ShieldCheck, Eye, EyeOff, ShieldAlert } from 'lucide-react';
+import { ChevronLeft, Sparkles, BookOpen, Layers, CheckCircle2, RotateCw, ShieldCheck, Eye, ShieldAlert } from 'lucide-react';
 import { getBookSummary, generateBookSummary, getLibrary } from '../api/client';
 
 export default function SummaryView({ bookId: propBookId, onBackToDeck }) {

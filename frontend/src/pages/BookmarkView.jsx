@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, ChevronDown, Bookmark, BookmarkCheck, ArrowRight, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronDown, Bookmark, BookmarkCheck, ArrowRight, Sparkles, BookOpen } from 'lucide-react';
 import { getChapters, updateBookmark } from '../api/client';
 
 export default function BookmarkView({ library = [], onUpdateBookmark, activeBookId }) {
   const navigate = useNavigate();
   const { bookId: paramBookId } = useParams();
 
-  const initialBookId = paramBookId ? Number(paramBookId) : (activeBookId || library[0]?.book?.id || 1);
+  const initialBookId = paramBookId ? Number(paramBookId) : (activeBookId || library[0]?.book?.id || null);
   const [targetBookId, setTargetBookId] = useState(initialBookId);
   const [targetChapter, setTargetChapter] = useState('CHAPTER I');
   const [targetPage, setTargetPage] = useState(1);
@@ -19,12 +19,14 @@ export default function BookmarkView({ library = [], onUpdateBookmark, activeBoo
   useEffect(() => {
     if (paramBookId) {
       setTargetBookId(Number(paramBookId));
+    } else if (library.length > 0 && !targetBookId) {
+      setTargetBookId(activeBookId || library[0]?.book?.id);
     }
-  }, [paramBookId]);
+  }, [paramBookId, library, activeBookId, targetBookId]);
 
   // Load current chapter & page for targetBook
   useEffect(() => {
-    const current = library.find(item => item.book.id === targetBookId);
+    const current = library.find(item => item.book?.id === targetBookId);
     if (current) {
       if (current.chapter) setTargetChapter(current.chapter);
       if (current.page) setTargetPage(current.page);
@@ -48,8 +50,8 @@ export default function BookmarkView({ library = [], onUpdateBookmark, activeBoo
     }
   }, [targetBookId, chaptersCache, targetChapter]);
 
-  const availableChapters = chaptersCache[targetBookId] || [targetChapter || 'CHAPTER I'];
-  const currentItem = library.find(item => item.book.id === targetBookId);
+  const availableChapters = (targetBookId && chaptersCache[targetBookId]) || [targetChapter || 'CHAPTER I'];
+  const currentItem = library.find(item => item.book?.id === targetBookId);
 
   const handleBookChange = (newBookId) => {
     setTargetBookId(newBookId);
@@ -58,6 +60,7 @@ export default function BookmarkView({ library = [], onUpdateBookmark, activeBoo
 
   const handleSaveBookmark = async (e) => {
     e.preventDefault();
+    if (!targetBookId) return;
     setSaving(true);
     try {
       await updateBookmark(targetBookId, { chapter: targetChapter, page: targetPage });
@@ -72,6 +75,31 @@ export default function BookmarkView({ library = [], onUpdateBookmark, activeBoo
       setSaving(false);
     }
   };
+
+  if (!library || library.length === 0) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-8 animate-fadeIn text-center py-16">
+        <div className="w-16 h-16 mx-auto rounded-3xl bg-[#f5f4ed] border border-[#e8e6dc] flex items-center justify-center text-[#c96442] shadow-sm">
+          <BookOpen size={28} />
+        </div>
+        <div className="space-y-3">
+          <h2 className="font-serif text-3xl text-[#141413] tracking-tight">No Volumes in Sanctuary</h2>
+          <p className="font-serif italic text-base text-[#5e5d59] max-w-md mx-auto">
+            You must ingest a volume into your sanctuary before synchronizing physical bookmark positions.
+          </p>
+        </div>
+        <div>
+          <button
+            onClick={() => navigate('/ingest')}
+            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-[#c96442] hover:bg-[#b35535] text-white font-sans text-xs font-bold uppercase tracking-widest transition-all shadow-md cursor-pointer"
+          >
+            <span>Ingest Your First Volume</span>
+            <ArrowRight size={14} />
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-8 animate-fadeIn">

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight, Sparkles, Plus } from 'lucide-react';
 import BookCover3D from '../components/BookCover3D';
 import ThreeScene from '../components/ThreeScene';
 
@@ -8,8 +8,8 @@ export default function LandingHeroView({
   onEnterSanctuary, 
   onOpenDashboard, 
   featuredBook,
-  booksReadCount = 18,
-  totalGoal = 24
+  booksReadCount = 0,
+  totalGoal = 12
 }) {
   const navigate = useNavigate();
   return (
@@ -56,20 +56,30 @@ export default function LandingHeroView({
                   {featuredBook?.percent !== undefined ? `${featuredBook.percent}%` : '0%'}
                 </span>
                 <span className="font-['Plus_Jakarta_Sans'] text-xs font-bold uppercase tracking-wider text-[#5e5d59]">
-                  Active Folio: {featuredBook?.currentChapter || 'Chapter I'} · pg. {featuredBook?.page || 1}
+                  {featuredBook ? `Active Folio: ${featuredBook.currentChapter} · pg. ${featuredBook.page}` : 'Active Folio: No volume active'}
                 </span>
               </div>
             </div>
 
             {/* Action Buttons */}
             <div className="flex flex-wrap items-center gap-4 pt-2">
-              <button
-                onClick={() => onEnterSanctuary ? onEnterSanctuary() : navigate(featuredBook?.id ? `/reader/${featuredBook.id}` : '/sanctuary')}
-                className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-[#c96442] hover:bg-[#b35535] text-white font-sans text-xs font-bold uppercase tracking-widest transition-all shadow-md active:scale-[0.98] cursor-pointer"
-              >
-                <span>Resume Reading</span>
-                <ArrowRight size={16} />
-              </button>
+              {featuredBook ? (
+                <button
+                  onClick={() => onEnterSanctuary ? onEnterSanctuary() : navigate(`/reader/${featuredBook.id}`)}
+                  className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-[#c96442] hover:bg-[#b35535] text-white font-sans text-xs font-bold uppercase tracking-widest transition-all shadow-md active:scale-[0.98] cursor-pointer"
+                >
+                  <span>Resume Reading</span>
+                  <ArrowRight size={16} />
+                </button>
+              ) : (
+                <button
+                  onClick={() => navigate('/ingest')}
+                  className="inline-flex items-center gap-2.5 px-8 py-4 rounded-2xl bg-[#c96442] hover:bg-[#b35535] text-white font-sans text-xs font-bold uppercase tracking-widest transition-all shadow-md active:scale-[0.98] cursor-pointer"
+                >
+                  <Plus size={16} />
+                  <span>Ingest a Book</span>
+                </button>
+              )}
 
               <button
                 onClick={() => onOpenDashboard ? onOpenDashboard() : navigate('/dashboard')}
@@ -87,23 +97,23 @@ export default function LandingHeroView({
               <div className="absolute -inset-6 rounded-full bg-[#c96442]/10 blur-2xl pointer-events-none"></div>
 
               <BookCover3D
-                title={featuredBook?.title || "Pride and Prejudice"}
-                author={featuredBook?.author || "Jane Austen"}
-                chapter={featuredBook?.currentChapter || "Chapter I"}
-                chapterPage={featuredBook?.page || 1}
+                title={featuredBook?.title || "Your Sanctuary Awaits"}
+                author={featuredBook?.author || "Empty Library Shelf"}
+                chapter={featuredBook?.currentChapter || "Volume I"}
+                chapterPage={featuredBook?.page || 0}
                 chapterPages={featuredBook?.chapterPages}
-                bookPage={featuredBook?.bookPage || featuredBook?.page || 1}
-                page={featuredBook?.bookPage || featuredBook?.page || 1}
-                totalPages={featuredBook?.totalPages || 100}
+                bookPage={featuredBook?.bookPage || featuredBook?.page || 0}
+                page={featuredBook?.bookPage || featuredBook?.page || 0}
+                totalPages={featuredBook?.totalPages || 0}
                 coverColor="#231f20"
                 accentColor="#c89d36"
-                coverImage={featuredBook?.coverArt || "https://www.gutenberg.org/cache/epub/1342/pg1342.cover.medium.jpg"}
-                onClick={() => onEnterSanctuary ? onEnterSanctuary() : navigate(featuredBook?.id ? `/reader/${featuredBook.id}` : '/sanctuary')}
+                coverImage={featuredBook?.coverArt || null}
+                onClick={() => onEnterSanctuary ? onEnterSanctuary() : navigate(featuredBook?.id ? `/reader/${featuredBook.id}` : '/ingest')}
               />
             </div>
 
             <p className="font-['Plus_Jakarta_Sans'] text-[11px] text-[#87867f] mt-8 text-center uppercase tracking-wider font-semibold">
-              Hover to tilt physical binding · Click cover to resume reading
+              {featuredBook ? "Hover to tilt physical binding · Click cover to resume reading" : "Hover to tilt binding · Click to ingest your first book"}
             </p>
           </div>
         </div>

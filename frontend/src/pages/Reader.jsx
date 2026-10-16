@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import { getChapters, getBookmark, updateBookmark, askQuestion, getLibrary, getBookContent } from '../api/client';
-import { ChevronLeft, Send, Bookmark, ShieldCheck, Sparkles, BookOpen } from 'lucide-react';
+import { ChevronLeft, Send, Bookmark, ShieldCheck, Sparkles } from 'lucide-react';
 
 export default function Reader({ bookId: propBookId, onBackToDeck, onOpenSummary, onUpdateBookmark }) {
   const { bookId: paramBookId } = useParams();

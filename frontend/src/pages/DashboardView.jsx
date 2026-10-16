@@ -33,9 +33,9 @@ export default function DashboardView({
 
   const totalPagesRead = library.reduce((acc, b) => {
     if (b.status === 'completed') {
-      return acc + (b.totalPages || 300);
+      return acc + (b.totalPages || 0);
     }
-    return acc + (b.page || 1);
+    return acc + (b.bookPage || b.page || 1);
   }, 0);
   const totalBooksCount = library.length;
   const completedCount = completedBooks.length;
@@ -152,7 +152,7 @@ export default function DashboardView({
             {/* Quick Actions */}
             <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
               <button
-                onClick={() => onOpenBook(activeItem.book.id, 'reader')}
+                onClick={() => onOpenBook ? onOpenBook(activeItem.book.id, 'reader') : navigate(`/reader/${activeItem.book.id}`)}
                 className="flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-[#c96442] hover:bg-[#b35535] text-white font-sans text-xs font-bold uppercase tracking-wider transition-all shadow-xs cursor-pointer active:scale-[0.98]"
               >
                 <BookOpen size={14} />
@@ -160,7 +160,7 @@ export default function DashboardView({
               </button>
 
               <button
-                onClick={() => onOpenBook(activeItem.book.id, 'summary')}
+                onClick={() => onOpenBook ? onOpenBook(activeItem.book.id, 'summary') : navigate(`/summary/${activeItem.book.id}`)}
                 className="flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl border border-[#e8e6dc] bg-[#faf9f5] hover:bg-[#f0eee6] text-[#141413] font-sans text-xs font-bold uppercase tracking-wider transition-all cursor-pointer active:scale-[0.98]"
               >
                 <Sparkles size={14} className="text-[#c96442]" />
@@ -245,6 +245,15 @@ export default function DashboardView({
             <p className="font-sans text-xs text-[#5e5d59] max-w-md mx-auto">
               Add a volume from Project Gutenberg or your bookshelf to begin reading with spoiler-shielded recall points.
             </p>
+            <div className="pt-2">
+              <button
+                onClick={() => navigate('/ingest')}
+                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#c96442] hover:bg-[#b35535] text-white text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-xs"
+              >
+                <span>Ingest a Volume</span>
+                <ArrowRight size={12} />
+              </button>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -396,7 +405,7 @@ export default function DashboardView({
                   </button>
 
                   <button
-                    onClick={() => onOpenBook(item.book.id, 'summary')}
+                    onClick={() => onOpenBook ? onOpenBook(item.book.id, 'summary') : navigate(`/summary/${item.book.id}`)}
                     className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#c96442] hover:bg-[#b35535] text-white font-sans text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-xs"
                   >
                     <span>Review Recall Points</span>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Link, NavLink, useLocation } from 'react-router-dom';
 import LandingHeroView from './pages/LandingHeroView';
 import SanctuaryDeckView from './pages/SanctuaryDeckView';
 import DashboardView from './pages/DashboardView';
@@ -7,11 +7,10 @@ import Reader from './pages/Reader';
 import SummaryView from './pages/SummaryView';
 import BookmarkView from './pages/BookmarkView';
 import IngestView from './pages/IngestView';
-import { getLibrary, updateLibrary, setActiveBook } from './api/client';
+import { getLibrary, setActiveBook } from './api/client';
 import { Feather, Layers, BarChart3 } from 'lucide-react';
 
 export default function App() {
-  const navigate = useNavigate();
   const location = useLocation();
 
   const [library, setLibrary] = useState([]);
@@ -40,7 +39,7 @@ export default function App() {
     bookPage: activeReadingItem.bookPage || activeReadingItem.page || 1,
     totalPages: activeReadingItem.totalPages || 100,
     percent: activeReadingItem.percent ?? 0,
-    coverArt: activeReadingItem.book.cover_image || "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=700"
+    coverArt: activeReadingItem.book.cover_image || null
   } : null;
 
   useEffect(() => {
@@ -238,7 +237,7 @@ export default function App() {
 
           <Route
             path="/summary/:bookId?"
-            element={<SummaryView defaultBookId={activeBookId} />}
+            element={<SummaryView bookId={currentBookId} />}
           />
 
           <Route

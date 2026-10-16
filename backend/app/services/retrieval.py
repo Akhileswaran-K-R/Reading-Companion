@@ -5,6 +5,20 @@ from app.services.vector_store import search_index, search_index_range
 from app.models import Chunk, Bookmark
 from app.config import settings
 
+def is_confident_rerank_score(score: float, threshold: float = None) -> bool:
+    """
+    Evaluates whether a reranker score indicates genuine semantic relevance.
+    Handles both probability-based rerankers (like BAAI/bge-reranker-base in [0.0, 1.0])
+    and logit-based cross-encoders (like ms-marco in [-10, 10]).
+    """
+    if threshold is None:
+        threshold = getattr(settings, "RERANK_THRESHOLD", 0.02)
+    # If the score is negative, it represents a raw logit
+    if score < 0:
+        return score > -2.5
+    # If the score is in [0.0, 1.0], it represents a probability from BGE
+    return score >= threshold
+
 def retrieve_and_rerank_chunks(db: Session, user_id: int, book_id: int, question: str):
     question_embedding = get_query_embedding(question)
     
@@ -33,8 +47,12 @@ def retrieve_and_rerank_chunks(db: Session, user_id: int, book_id: int, question
     scored_chunks = list(zip(retrieved_chunks, scores))
     scored_chunks.sort(key=lambda x: x[1], reverse=True)
     
-    # Consider only confident matches (reranker score threshold)
-    confident_scored = [item for item in scored_chunks[:settings.RERANK_TOP_N] if item[1] > -3.5]
+    # Filter by model confidence threshold
+    confident_scored = [
+        item for item in scored_chunks[:settings.RERANK_TOP_N]
+        if is_confident_rerank_score(item[1])
+    ]
+            
     if not confident_scored:
         return []
 
@@ -78,9 +96,8 @@ def check_forward_look_hint(db: Session, book_id: int, bookmark_chunk_index: int
 
     top_chunk, top_score = scored[0]
     
-    # Check if the future relevance is sufficiently confident
-    # For bge-reranker, logit scores typically exceed -4.0 for topical relevance
-    if top_score > -4.5:
+    # Check if the future relevance meets the confidence threshold
+    if is_confident_rerank_score(top_score):
         chap_name = top_chunk.chapter or "a future chapter"
         return {
             "found": True,

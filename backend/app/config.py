@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     GENERATION_MODEL: str = "mistral:7b-instruct"
     RETRIEVE_K: int = 10
     RERANK_TOP_N: int = 4
+    RERANK_THRESHOLD: float = 0.02
     MAX_NEW_TOKENS: int = 400
     CHUNK_WORDS: int = 200
     CHUNK_OVERLAP_WORDS: int = 30

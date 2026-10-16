@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, Sparkles, BookOpen, Layers, CheckCircle2, RotateCw, ShieldCheck, Eye, EyeOff, ShieldAlert } from 'lucide-react';
 import { getBookSummary, generateBookSummary, getLibrary } from '../api/client';
 
-export default function SummaryView({ bookId = 1, onBackToDeck }) {
+export default function SummaryView({ bookId: propBookId, onBackToDeck }) {
+  const { bookId: paramBookId } = useParams();
+  const navigate = useNavigate();
+  const bookId = paramBookId ? Number(paramBookId) : (propBookId || 1);
   const [activeTab, setActiveTab] = useState('synthesis');
   const [remoteSummary, setRemoteSummary] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -66,14 +70,13 @@ export default function SummaryView({ bookId = 1, onBackToDeck }) {
       {/* Top Header / Volume Metadata */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-[#e8e6dc]">
         <div className="flex items-center gap-3">
-          {onBackToDeck && (
-            <button
-              onClick={onBackToDeck}
-              className="p-2 rounded-xl bg-[#faf9f5] border border-[#e8e6dc] text-[#5e5d59] hover:text-[#141413] hover:bg-[#f0eee6] transition-all cursor-pointer"
-            >
-              <ChevronLeft size={18} />
-            </button>
-          )}
+          <button
+            onClick={() => onBackToDeck ? onBackToDeck() : navigate('/sanctuary')}
+            className="p-2 rounded-xl bg-[#faf9f5] border border-[#e8e6dc] text-[#5e5d59] hover:text-[#141413] hover:bg-[#f0eee6] transition-all cursor-pointer"
+            title="Return to Sanctuary Deck"
+          >
+            <ChevronLeft size={18} />
+          </button>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-['Plus_Jakarta_Sans'] text-[11px] font-bold uppercase tracking-widest text-[#c96442]">
@@ -99,14 +102,24 @@ export default function SummaryView({ bookId = 1, onBackToDeck }) {
           </div>
         </div>
 
-        <button
-          onClick={handleRegenerate}
-          disabled={generating}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[#e8e6dc] bg-[#faf9f5] hover:bg-[#f0eee6] text-xs font-['Plus_Jakarta_Sans'] font-bold uppercase text-[#141413] transition-all cursor-pointer shadow-xs disabled:opacity-50"
-        >
-          <RotateCw size={13} className={generating ? "animate-spin text-[#c96442]" : "text-[#c96442]"} />
-          <span>{generating ? "Synthesizing..." : "Regenerate Recall"}</span>
-        </button>
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => navigate(`/reader/${bookId}`)}
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#c96442] hover:bg-[#b35535] text-white text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-xs"
+          >
+            <BookOpen size={13} />
+            <span>Open Reader</span>
+          </button>
+
+          <button
+            onClick={handleRegenerate}
+            disabled={generating}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[#e8e6dc] bg-[#faf9f5] hover:bg-[#f0eee6] text-xs font-['Plus_Jakarta_Sans'] font-bold uppercase text-[#141413] transition-all cursor-pointer shadow-xs disabled:opacity-50"
+          >
+            <RotateCw size={13} className={generating ? "animate-spin text-[#c96442]" : "text-[#c96442]"} />
+            <span>{generating ? "Synthesizing..." : "Regenerate Recall"}</span>
+          </button>
+        </div>
       </div>
 
       {/* Spoiler Guard Notification Banner */}

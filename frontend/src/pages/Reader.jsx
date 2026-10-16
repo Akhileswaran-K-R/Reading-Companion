@@ -1,9 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import { getChapters, getBookmark, updateBookmark, askQuestion, getLibrary, getBookContent } from '../api/client';
 import { ChevronLeft, Send, Bookmark, ShieldCheck, Sparkles, BookOpen } from 'lucide-react';
 
-export default function Reader({ bookId = 1, onBackToDeck, onOpenSummary }) {
+export default function Reader({ bookId: propBookId, onBackToDeck, onOpenSummary, onUpdateBookmark }) {
+  const { bookId: paramBookId } = useParams();
+  const navigate = useNavigate();
+  const bookId = paramBookId ? Number(paramBookId) : (propBookId || 1);
   const [book, setBook] = useState(null);
   const [chapters, setChapters] = useState([]);
   const [bookmark, setBookmark] = useState(0);
@@ -58,6 +62,9 @@ export default function Reader({ bookId = 1, onBackToDeck, onOpenSummary }) {
         if (bmRes.data.chapter) {
           setReadChapter(bmRes.data.chapter);
         }
+        if (onUpdateBookmark && bmRes.data.chapter) {
+          onUpdateBookmark(bookId, bmRes.data.chapter, bmRes.data.page || 1);
+        }
       }
     } catch (e) {
       console.warn("Failed loading book reader data:", e);
@@ -87,10 +94,19 @@ export default function Reader({ bookId = 1, onBackToDeck, onOpenSummary }) {
 
   const handleUpdateBookmark = async (newChunkIndex, chap, page) => {
     setBookmark(newChunkIndex);
+    if (chap) setReadChapter(chap);
     try {
-      await updateBookmark(bookId, { chunk_index: newChunkIndex });
+      const res = await updateBookmark(bookId, { chunk_index: newChunkIndex });
+      const finalChap = res?.data?.chapter || chap;
+      const finalPage = res?.data?.page || page;
+      if (onUpdateBookmark) {
+        onUpdateBookmark(bookId, finalChap, finalPage);
+      }
     } catch (e) {
       console.warn("Bookmark updated locally:", e);
+      if (onUpdateBookmark) {
+        onUpdateBookmark(bookId, chap, page);
+      }
     }
   };
 
@@ -140,14 +156,13 @@ export default function Reader({ bookId = 1, onBackToDeck, onOpenSummary }) {
       {/* Top Header & Context Horizon Banner */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-[#e8e6dc]">
         <div className="flex items-center gap-3">
-          {onBackToDeck && (
-            <button
-              onClick={onBackToDeck}
-              className="p-2 rounded-xl bg-[#faf9f5] border border-[#e8e6dc] text-[#5e5d59] hover:text-[#141413] hover:bg-[#f0eee6] transition-all cursor-pointer"
-            >
-              <ChevronLeft size={18} />
-            </button>
-          )}
+          <button
+            onClick={() => onBackToDeck ? onBackToDeck() : navigate('/sanctuary')}
+            className="p-2 rounded-xl bg-[#faf9f5] border border-[#e8e6dc] text-[#5e5d59] hover:text-[#141413] hover:bg-[#f0eee6] transition-all cursor-pointer"
+            title="Return to Sanctuary Deck"
+          >
+            <ChevronLeft size={18} />
+          </button>
           <div>
             <div className="inline-flex items-center gap-2 font-['Plus_Jakarta_Sans'] text-[11px] font-bold uppercase tracking-widest text-[#c96442]">
               <span>Sanctuary Reading Conduit</span>
@@ -171,15 +186,14 @@ export default function Reader({ bookId = 1, onBackToDeck, onOpenSummary }) {
             </span>
           </div>
 
-          {onOpenSummary && (
-            <button
-              onClick={onOpenSummary}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#faf9f5] border border-[#e8e6dc] hover:border-[#c96442]/60 hover:bg-[#f0eee6] transition-all cursor-pointer text-xs shadow-xs"
-            >
-              <Sparkles size={13} className="text-[#c96442]" />
-              <span className="font-['Plus_Jakarta_Sans'] font-semibold text-[#141413]">Recall Points</span>
-            </button>
-          )}
+          <button
+            onClick={() => onOpenSummary ? onOpenSummary() : navigate(`/summary/${bookId}`)}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#faf9f5] border border-[#e8e6dc] hover:border-[#c96442]/60 hover:bg-[#f0eee6] transition-all cursor-pointer text-xs shadow-xs"
+            title="View spoiler-guarded recall points"
+          >
+            <Sparkles size={13} className="text-[#c96442]" />
+            <span className="font-['Plus_Jakarta_Sans'] font-semibold text-[#141413]">Recall Points</span>
+          </button>
         </div>
       </div>
 
@@ -329,21 +343,21 @@ export default function Reader({ bookId = 1, onBackToDeck, onOpenSummary }) {
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
               <button
                 type="button"
-                onClick={() => setInput(`Who are the key figures introduced in ${readChapter || 'this chapter'}?`)}
+                onClick={() => setInput(`Who are the main characters in the story?`)}
                 className="px-3 py-1.5 rounded-full bg-[#f0eee6] hover:bg-[#e8e6dc] text-[#5e5d59] hover:text-[#141413] text-[11px] font-['Plus_Jakarta_Sans'] font-medium whitespace-nowrap transition-colors cursor-pointer"
               >
                 "Key figures here?"
               </button>
               <button
                 type="button"
-                onClick={() => setInput(`What is the central dilemma or dialogue in ${readChapter || 'this section'}?`)}
+                onClick={() => setInput(`What is the central dilemma in the story?`)}
                 className="px-3 py-1.5 rounded-full bg-[#f0eee6] hover:bg-[#e8e6dc] text-[#5e5d59] hover:text-[#141413] text-[11px] font-['Plus_Jakarta_Sans'] font-medium whitespace-nowrap transition-colors cursor-pointer"
               >
                 "Main conflict so far?"
               </button>
               <button
                 type="button"
-                onClick={() => setInput("What important developments have happened prior to my current bookmark?")}
+                onClick={() => setInput("What important developments have happened in the story?")}
                 className="px-3 py-1.5 rounded-full bg-[#f0eee6] hover:bg-[#e8e6dc] text-[#5e5d59] hover:text-[#141413] text-[11px] font-['Plus_Jakarta_Sans'] font-medium whitespace-nowrap transition-colors cursor-pointer"
               >
                 "Recall up to bookmark"

@@ -10,6 +10,9 @@ export default function BookCover3D({
   chapter, 
   page, 
   totalPages,
+  chapterPage,
+  chapterPages,
+  bookPage,
   coverColor = "#2b2a27",
   accentColor = "#c89d36",
   coverImage = null,
@@ -35,6 +38,9 @@ export default function BookCover3D({
     setIsHovered(false);
     setRotate({ x: 0, y: 0 });
   };
+
+  const displayBookPage = bookPage || page || 1;
+  const displayTotalPages = totalPages || 100;
 
   return (
     <div 
@@ -88,8 +94,8 @@ export default function BookCover3D({
             <span className="font-serif italic text-xs tracking-wider" style={{ color: accentColor }}>
               Classic Volume
             </span>
-            <span className="font-['Plus_Jakarta_Sans'] text-[10px] text-white/70 font-semibold uppercase tracking-wider">
-              {chapter}
+            <span className="font-['Plus_Jakarta_Sans'] text-[10px] text-white/70 font-semibold uppercase tracking-wider truncate max-w-[140px]" title={chapter}>
+              {chapter}{chapterPage ? ` · pg. ${chapterPage}` : ''}
             </span>
           </div>
 
@@ -105,7 +111,7 @@ export default function BookCover3D({
 
           {/* Bottom Coordinates & Bookmark Indicator */}
           <div className="relative z-10 border-t border-white/20 pt-3 flex items-center justify-between text-xs text-white/75 font-['Plus_Jakarta_Sans'] font-medium">
-            <span>pg. {page} of {totalPages}</span>
+            <span>pg. {displayBookPage} of {displayTotalPages}</span>
             <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: accentColor }}></span>
           </div>
 

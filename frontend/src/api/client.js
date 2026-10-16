@@ -51,6 +51,10 @@ export const updateLibrary = (bookId, status) => fetchApi('/library/', {
   body: JSON.stringify({ book_id: bookId, status }),
 });
 
+export const setActiveBook = (bookId) => fetchApi(`/library/active/${bookId}`, {
+  method: 'PUT',
+});
+
 export const getChapters = (bookId) => fetchApi(`/books/${bookId}/chapters`);
 
 export const getBookContent = (bookId, chapter) => 

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Trophy, 
   BookOpen, 
@@ -21,6 +22,7 @@ export default function DashboardView({
   onSetActiveBook,
   onReloadLibrary 
 }) {
+  const navigate = useNavigate();
   const completedBooks = library.filter(b => b.status === 'completed');
   const inProgressBooks = library.filter(b => b.status !== 'completed');
   
@@ -315,7 +317,7 @@ export default function DashboardView({
 
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => onOpenBook(item.book.id, 'summary')}
+                        onClick={() => onOpenBook ? onOpenBook(item.book.id, 'summary') : navigate(`/summary/${item.book.id}`)}
                         className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-[#e8e6dc] hover:bg-[#f0eee6] text-xs font-['Plus_Jakarta_Sans'] font-semibold text-[#141413] transition-all cursor-pointer"
                       >
                         <Sparkles size={12} className="text-[#c96442]" />
@@ -323,7 +325,7 @@ export default function DashboardView({
                       </button>
 
                       <button
-                        onClick={() => onOpenBook(item.book.id, 'reader')}
+                        onClick={() => onOpenBook ? onOpenBook(item.book.id, 'reader') : navigate(`/reader/${item.book.id}`)}
                         className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#c96442] hover:bg-[#b35535] text-white text-xs font-['Plus_Jakarta_Sans'] font-bold uppercase tracking-wider transition-all cursor-pointer shadow-xs"
                       >
                         <span>Resume</span>

@@ -1,73 +1,65 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, Sparkles, BookOpen, Layers, CheckCircle2 } from 'lucide-react';
-import { getBookSummary } from '../api/client';
+import { ChevronLeft, Sparkles, BookOpen, Layers, CheckCircle2, RotateCw, ShieldCheck, Eye, EyeOff, ShieldAlert } from 'lucide-react';
+import { getBookSummary, generateBookSummary, getLibrary } from '../api/client';
 
-export default function SummaryView({ bookId = 2, onBackToDeck }) {
+export default function SummaryView({ bookId = 1, onBackToDeck }) {
   const [activeTab, setActiveTab] = useState('synthesis');
   const [remoteSummary, setRemoteSummary] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [bookMeta, setBookMeta] = useState(null);
+  const [isUnlocked, setIsUnlocked] = useState(false);
 
   useEffect(() => {
     if (bookId) {
-      getBookSummary(bookId)
-        .then(res => {
-          if (res?.data) {
-            setRemoteSummary(res.data);
-          }
-        })
-        .catch(() => {});
+      loadSummary(isUnlocked);
     }
   }, [bookId]);
 
-  const summaryData = {
-    title: "Pride and Prejudice",
-    author: "Jane Austen",
-    status: "Completed",
-    totalChapters: 61,
-    overallSynthesis: `
-*Pride and Prejudice* charts the emotional and moral maturation of Elizabeth Bennet and Fitzwilliam Darcy. Set within the socially stratified world of Regency England, the novel scrutinizes how superficial first impressions, class posturing, and unchecked pride distort true perception. 
-
-Through their turbulent journey—from Darcy’s haughty disdain at the Meryton ball to Elizabeth’s misjudged trust in George Wickham—both protagonists must dismantle their own flaws before achieving genuine harmony. The work remains an indelible celebration of psychological realism, domestic wit, and egalitarian affection.
-    `,
-    themes: [
-      { name: "First Impressions & Perception", desc: "How premature judgments cloud moral and relational clarity." },
-      { name: "Class, Wealth & Matrimony", desc: "The delicate balance between economic survival and romantic authenticity." },
-      { name: "Individual Pride vs. Humility", desc: "Darcy’s aristocratic hauteur and Elizabeth’s self-righteous prejudice." }
-    ],
-    chapterRecallPoints: [
-      {
-        chapter: "Chapter I",
-        subtitle: "The Proposition of Netherfield Park",
-        takeaway: "Establishes the immortal premise that 'a single man in possession of a good fortune, must be in want of a wife.' Mrs. Bennet relentlessly lobbies Mr. Bennet to call upon the wealthy new tenant, Charles Bingley."
-      },
-      {
-        chapter: "Chapter II",
-        subtitle: "The Surprise Visit",
-        takeaway: "Mr. Bennet secretly visits Bingley without informing his wife, revealing his dry satirical character while delighting the family."
-      },
-      {
-        chapter: "Chapter III",
-        subtitle: "The Meryton Assembly",
-        takeaway: "The town ball introduces Darcy, whose initial haughtiness sparks town-wide outrage when he rebuffs Elizabeth as merely 'tolerable, but not handsome enough to tempt me.'"
-      },
-      {
-        chapter: "Chapter IV",
-        subtitle: "Sisters in Confidence",
-        takeaway: "Jane’s unreserved optimism contrasts with Elizabeth’s sharper skepticism as they privately dissect the dance and Bingley’s amiability."
-      },
-      {
-        chapter: "Chapter V",
-        subtitle: "Lucas Lodge Deliberations",
-        takeaway: "Charlotte Lucas distinguishes between vanity (what others think) and pride (what one thinks of oneself), foreshadowing future decisions."
+  const loadSummary = async (unlockedState = isUnlocked) => {
+    setLoading(true);
+    try {
+      const libRes = await getLibrary();
+      const current = libRes.data?.find((i) => String(i.book.id) === String(bookId));
+      if (current) {
+        setBookMeta(current.book);
       }
-    ],
-    characters: [
-      { name: "Elizabeth Bennet", role: "Protagonist, keen-witted second daughter with sharp perception." },
-      { name: "Fitzwilliam Darcy", role: "Wealthy estate owner of Pemberley, struggling with aristocratic pride." },
-      { name: "Jane Bennet", role: "Eldest sister, consistently charitable in judgment." },
-      { name: "Charles Bingley", role: "Easygoing and affable gentleman tenant of Netherfield." },
-      { name: "Mr. Wickham", role: "Charming militia officer whose outward polish masks dishonesty." }
-    ]
+
+      const res = await getBookSummary(bookId, unlockedState);
+      if (res?.data) {
+        setRemoteSummary(res.data);
+      }
+    } catch (err) {
+      console.warn("Summary load:", err);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const handleToggleUnlock = async (unlock) => {
+    setIsUnlocked(unlock);
+    await loadSummary(unlock);
+  };
+
+  const handleRegenerate = async () => {
+    setGenerating(true);
+    try {
+      const res = await generateBookSummary(bookId);
+      if (res?.data) {
+        setRemoteSummary(res.data);
+      }
+    } catch (err) {
+      alert("Summary generation in progress or local LLM offline. Please retry shortly.");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const title = remoteSummary?.title || bookMeta?.title || "Volume Synthesis";
+  const author = remoteSummary?.author || bookMeta?.author || "Author";
+  const totalChapters = remoteSummary?.recall_points?.length || 0;
+  const isBounded = remoteSummary?.is_bounded;
+  const bookmarkChapter = remoteSummary?.bookmark_chapter;
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto animate-fadeIn">
@@ -83,24 +75,94 @@ Through their turbulent journey—from Darcy’s haughty disdain at the Meryton 
             </button>
           )}
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="font-['Plus_Jakarta_Sans'] text-[11px] font-bold uppercase tracking-widest text-[#c96442]">
                 Recall & Memory Booster
               </span>
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#e8e6dc] text-[#5e5d59] text-[10px] font-['Plus_Jakarta_Sans'] font-bold uppercase">
                 <CheckCircle2 size={11} className="text-[#c96442]" />
-                Volume Completed
+                Volume Summary
               </span>
+              {isBounded && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#faede6] border border-[#f0dfcc] text-[#c96442] text-[10px] font-['Plus_Jakarta_Sans'] font-bold uppercase">
+                  <ShieldCheck size={11} />
+                  Spoiler Shield Active
+                </span>
+              )}
             </div>
             <h1 className="font-serif text-3xl text-[#141413] leading-tight mt-0.5">
-              {summaryData.title}
+              {title}
             </h1>
             <p className="font-serif italic text-sm text-[#5e5d59]">
-              {summaryData.author} · {summaryData.totalChapters} Chapters Summarized
+              {author} · {totalChapters} {isBounded ? `Chapters Read (Bounded to ${bookmarkChapter})` : 'Chapters Summarized'}
             </p>
           </div>
         </div>
+
+        <button
+          onClick={handleRegenerate}
+          disabled={generating}
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[#e8e6dc] bg-[#faf9f5] hover:bg-[#f0eee6] text-xs font-['Plus_Jakarta_Sans'] font-bold uppercase text-[#141413] transition-all cursor-pointer shadow-xs disabled:opacity-50"
+        >
+          <RotateCw size={13} className={generating ? "animate-spin text-[#c96442]" : "text-[#c96442]"} />
+          <span>{generating ? "Synthesizing..." : "Regenerate Recall"}</span>
+        </button>
       </div>
+
+      {/* Spoiler Guard Notification Banner */}
+      {isBounded ? (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl bg-[#faf6f0] border border-[#f0dfcc] text-[#141413]">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#f7ebe1] border border-[#edd7c2] flex items-center justify-center text-[#c96442] shrink-0">
+              <ShieldCheck size={18} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-['Plus_Jakarta_Sans'] text-xs font-bold uppercase tracking-wider text-[#c96442]">
+                  Bookmark-Bounded Recall
+                </span>
+                <span className="text-xs text-[#5e5d59]">· Synchronized with {bookmarkChapter || "Active Reading Mark"}</span>
+              </div>
+              <p className="font-serif text-xs text-[#5e5d59] mt-0.5">
+                Recall points past your current bookmark are shielded to preserve suspense and plot discoveries.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => handleToggleUnlock(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-[#e8e6dc] bg-[#faf9f5] hover:bg-[#f0eee6] text-xs font-['Plus_Jakarta_Sans'] font-semibold text-[#5e5d59] hover:text-[#141413] transition-all cursor-pointer shrink-0"
+          >
+            <Eye size={13} className="text-[#c96442]" />
+            <span>Reveal Full Volume (Show Spoilers)</span>
+          </button>
+        </div>
+      ) : isUnlocked ? (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl bg-[#faf9f5] border border-[#e8e6dc] text-[#141413]">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#f0eee6] border border-[#e8e6dc] flex items-center justify-center text-[#5e5d59] shrink-0">
+              <ShieldAlert size={18} className="text-[#c96442]" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-['Plus_Jakarta_Sans'] text-xs font-bold uppercase tracking-wider text-[#141413]">
+                  Full Volume Unlocked
+                </span>
+                <span className="text-xs text-[#5e5d59]">· All {totalChapters} chapters revealed</span>
+              </div>
+              <p className="font-serif text-xs text-[#5e5d59] mt-0.5">
+                Showing complete volume milestones including chapters beyond your current reading mark.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => handleToggleUnlock(false)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-[#e8e6dc] bg-[#faf9f5] hover:bg-[#f0eee6] text-xs font-['Plus_Jakarta_Sans'] font-semibold text-[#5e5d59] hover:text-[#141413] transition-all cursor-pointer shrink-0"
+          >
+            <ShieldCheck size={13} className="text-[#c96442]" />
+            <span>Re-enable Spoiler Shield</span>
+          </button>
+        </div>
+      ) : null}
 
       {/* Mode Selector Tabs (Epilogue) */}
       <div className="flex items-center gap-3 border-b border-[#e8e6dc] pb-2">
@@ -152,12 +214,16 @@ Through their turbulent journey—from Darcy’s haughty disdain at the Meryton 
             </div>
 
             <div className="font-serif text-[18px] leading-[1.8] text-[#141413] whitespace-pre-line space-y-4">
-              {remoteSummary?.overall_summary || summaryData.overallSynthesis}
+              {loading ? (
+                <p className="italic text-[#5e5d59]">Consulting volume archives...</p>
+              ) : (
+                remoteSummary?.overall_summary || "Volume synthesis is being prepared for this title."
+              )}
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {summaryData.themes.map((th, idx) => (
+            {(remoteSummary?.themes || []).map((th, idx) => (
               <div
                 key={idx}
                 className="bg-[#faf9f5] rounded-2xl border border-[#e8e6dc] p-6 space-y-2 hover:border-[#c96442]/50 transition-colors shadow-xs"
@@ -181,7 +247,7 @@ Through their turbulent journey—from Darcy’s haughty disdain at the Meryton 
           </div>
 
           <div className="space-y-4">
-            {remoteSummary?.recall_points && remoteSummary.recall_points.length > 0 ? (
+            {(remoteSummary?.recall_points || []).length > 0 ? (
               remoteSummary.recall_points.map((pt, idx) => (
                 <div
                   key={idx}
@@ -200,24 +266,11 @@ Through their turbulent journey—from Darcy’s haughty disdain at the Meryton 
                 </div>
               ))
             ) : (
-              summaryData.chapterRecallPoints.map((pt, idx) => (
-                <div
-                  key={idx}
-                  className="bg-[#faf9f5] rounded-xl border border-[#e8e6dc] p-6 flex flex-col sm:flex-row items-start gap-5 hover:border-[#c96442]/60 transition-all shadow-xs"
-                >
-                  <div className="shrink-0 font-['Plus_Jakarta_Sans'] text-xs font-bold text-[#c96442] bg-[#f5f4ed] px-3 py-1.5 rounded-lg border border-[#e8e6dc]">
-                    {pt.chapter}
-                  </div>
-                  <div className="space-y-1.5 flex-1">
-                    <h3 className="font-serif text-lg text-[#141413] font-medium">
-                      {pt.subtitle}
-                    </h3>
-                    <p className="font-serif text-[15px] text-[#5e5d59] leading-relaxed">
-                      {pt.takeaway}
-                    </p>
-                  </div>
-                </div>
-              ))
+              <div className="p-8 text-center bg-[#faf9f5] border border-[#e8e6dc] rounded-2xl">
+                <p className="font-serif italic text-[#5e5d59]">
+                  {loading ? "Synthesizing recall points..." : "No recall points generated yet. Tap 'Regenerate Recall' above to synthesize milestones."}
+                </p>
+              </div>
             )}
           </div>
         </div>
@@ -225,7 +278,7 @@ Through their turbulent journey—from Darcy’s haughty disdain at the Meryton 
 
       {activeTab === 'dramatis' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {summaryData.characters.map((ch, idx) => (
+          {(remoteSummary?.characters || []).map((ch, idx) => (
             <div
               key={idx}
               className="bg-[#faf9f5] rounded-xl border border-[#e8e6dc] p-5 flex items-start gap-4 hover:border-[#c96442]/50 transition-colors shadow-xs"

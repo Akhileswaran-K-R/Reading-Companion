@@ -3,13 +3,13 @@ import ReactMarkdown from 'react-markdown';
 import { getChapters, getBookmark, updateBookmark, askQuestion, getLibrary, getBookContent } from '../api/client';
 import { ChevronLeft, Send, Bookmark, ShieldCheck, Sparkles, BookOpen } from 'lucide-react';
 
-export default function Reader({ bookId = 1, onBackToDeck }) {
+export default function Reader({ bookId = 1, onBackToDeck, onOpenSummary }) {
   const [book, setBook] = useState(null);
   const [chapters, setChapters] = useState([]);
-  const [bookmark, setBookmark] = useState(15);
+  const [bookmark, setBookmark] = useState(0);
   
   // Chapter Reading & Text Content State
-  const [readChapter, setReadChapter] = useState('Chapter IV');
+  const [readChapter, setReadChapter] = useState('');
   const [chunks, setChunks] = useState([]);
   const [loadingChunks, setLoadingChunks] = useState(false);
   
@@ -17,50 +17,14 @@ export default function Reader({ bookId = 1, onBackToDeck }) {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: "Sanctuary locked. Context strictly bounded to **Chapter IV, pg. 52**. Ask about characters, motifs, or philosophy without danger of spoilers.",
-      citations: [{ chapter: 'Chapter IV', page: 52, chunk_index: 15 }]
+      content: "Sanctuary locked. Context strictly bounded to your active bookmark. Ask about characters, motifs, or philosophy without danger of spoilers.",
+      citations: []
     }
   ]);
   const [input, setInput] = useState('');
   const [loadingAnswer, setLoadingAnswer] = useState(false);
   
   const chatEndRef = useRef(null);
-
-  // Fallback demo content
-  const sampleBookData = {
-    id: 1,
-    title: "Frankenstein; or, The Modern Prometheus",
-    author: "Mary Wollstonecraft Shelley",
-    chapters: [
-      { chapter: "Letter I", start_chunk: 0, end_chunk: 2 },
-      { chapter: "Letter II", start_chunk: 3, end_chunk: 4 },
-      { chapter: "Chapter I", start_chunk: 5, end_chunk: 7 },
-      { chapter: "Chapter II", start_chunk: 8, end_chunk: 10 },
-      { chapter: "Chapter III", start_chunk: 11, end_chunk: 13 },
-      { chapter: "Chapter IV", start_chunk: 14, end_chunk: 18 },
-      { chapter: "Chapter V", start_chunk: 19, end_chunk: 24 }
-    ],
-    sampleProse: [
-      {
-        chunk_index: 14,
-        chapter: "Chapter IV",
-        page: 50,
-        text: "From this day natural philosophy, and particularly chemistry, in the most comprehensive sense of the term, became nearly my sole occupation. I read with ardour those works, so full of genius and discrimination, which modern inquirers have written on these subjects. I attended the lectures and cultivated the acquaintance of the celebrated professors of the university."
-      },
-      {
-        chunk_index: 15,
-        chapter: "Chapter IV",
-        page: 52,
-        text: "Two years passed in this manner, during which I paid no visit to Geneva, but was engaged, heart and soul, in the pursuit of some discoveries which I hoped to make. None but those who have experienced them can conceive of the enticements of science. In other studies you go as far as others have gone before you, and there is nothing more to know; but in a scientific pursuit there is continual food for discovery and wonder."
-      },
-      {
-        chunk_index: 16,
-        chapter: "Chapter IV",
-        page: 54,
-        text: "One of the phenomena which had peculiarly attracted my attention was the structure of the human frame, and, indeed, any animal endued with life. Whence, I often asked myself, did the principle of life proceed? It was a bold question, and one which has ever been considered as a mystery; yet with how many things are we upon the brink of becoming acquainted, if cowardice or carelessness did not restrain our inquiries."
-      }
-    ]
-  };
 
   useEffect(() => {
     loadBookData();
@@ -78,33 +42,33 @@ export default function Reader({ bookId = 1, onBackToDeck }) {
       const current = libRes.data?.find((i) => String(i.book.id) === String(bookId));
       if (current) {
         setBook(current.book);
-      } else {
-        setBook(sampleBookData);
       }
 
       const chapRes = await getChapters(bookId);
       if (chapRes.data && chapRes.data.length > 0) {
         setChapters(chapRes.data);
-        setReadChapter(chapRes.data[0].chapter || 'Chapter IV');
-      } else {
-        setChapters(sampleBookData.chapters);
+        if (!readChapter) {
+          setReadChapter(chapRes.data[0].chapter);
+        }
       }
 
       const bmRes = await getBookmark(bookId);
       if (bmRes.data && bmRes.data.chunk_index !== undefined) {
         setBookmark(bmRes.data.chunk_index);
+        if (bmRes.data.chapter) {
+          setReadChapter(bmRes.data.chapter);
+        }
       }
-    } catch {
-      setBook(sampleBookData);
-      setChapters(sampleBookData.chapters);
+    } catch (e) {
+      console.warn("Failed loading book reader data:", e);
     }
   };
 
   useEffect(() => {
-    if (readChapter) {
+    if (readChapter && bookId) {
       loadChapterContent(readChapter);
     }
-  }, [readChapter]);
+  }, [readChapter, bookId]);
 
   const loadChapterContent = async (chapterName) => {
     setLoadingChunks(true);
@@ -113,10 +77,10 @@ export default function Reader({ bookId = 1, onBackToDeck }) {
       if (res.data && res.data.length > 0) {
         setChunks(res.data);
       } else {
-        setChunks(sampleBookData.sampleProse);
+        setChunks([]);
       }
     } catch {
-      setChunks(sampleBookData.sampleProse);
+      setChunks([]);
     }
     setLoadingChunks(false);
   };
@@ -141,12 +105,7 @@ export default function Reader({ bookId = 1, onBackToDeck }) {
     setLoadingAnswer(true);
 
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 12000);
-
       const res = await askQuestion(bookId, userText);
-      clearTimeout(timeoutId);
-
       if (res && res.data && res.data.answer) {
         setMessages((prev) => [
           ...prev, 
@@ -156,41 +115,25 @@ export default function Reader({ bookId = 1, onBackToDeck }) {
             citations: res.data.citations || [] 
           }
         ]);
-        setLoadingAnswer(false);
-        return;
       } else {
         throw new Error("Invalid response format");
       }
     } catch (err) {
-      setTimeout(() => {
-        let simulatedAnswer = "";
-        let lowerQ = userText.toLowerCase();
-
-        if (lowerQ.includes("waldman") || lowerQ.includes("krempe") || lowerQ.includes("professor")) {
-          simulatedAnswer = "At your current reading position in Chapter IV, Victor closely studied under Professor M. Waldman, who encouraged his biochemical curiosity, contrasting with M. Krempe's dismissive skepticism. [Ch. IV, pg. 50]";
-        } else if (lowerQ.includes("monster") || lowerQ.includes("creature") || lowerQ.includes("creation") || lowerQ.includes("breath")) {
-          simulatedAnswer = "Victor is currently solely discovering the biological principle of life. The culmination and animating of the creature does not occur until Chapter V. Keep reading up to Chapter V to discover it!";
-        } else if (lowerQ.includes("geneva") || lowerQ.includes("family") || lowerQ.includes("elizabeth")) {
-          simulatedAnswer = "Victor has spent two years secluded in Ingolstadt without visiting Geneva, completely consumed by his scientific obsession. [Ch. IV, pg. 52]";
-        } else {
-          simulatedAnswer = `Based strictly on the text read up to Chapter IV, pg. 52: Victor is dedicated to discovering the principles of animation and chemistry. If your query references events past this horizon, it is protected by the spoiler shield.`;
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: "Based strictly on the text read up to your bookmark, the assistant is currently unable to generate a response. Please verify that the local LLM is running.",
+          citations: []
         }
-
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: 'assistant',
-            content: simulatedAnswer,
-            citations: [{ chapter: readChapter || 'Chapter IV', page: 52, chunk_index: bookmark }]
-          }
-        ]);
-        setLoadingAnswer(false);
-      }, 500);
+      ]);
+    } finally {
+      setLoadingAnswer(false);
     }
   };
 
-  const currentBookTitle = book?.title || "Frankenstein; or, The Modern Prometheus";
-  const currentAuthor = book?.author || "Mary Wollstonecraft Shelley";
+  const currentBookTitle = book?.title || "Volume Parchment";
+  const currentAuthor = book?.author || "Author";
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -218,7 +161,7 @@ export default function Reader({ bookId = 1, onBackToDeck }) {
           </div>
         </div>
 
-        {/* Current Bookmark Badge */}
+        {/* Current Bookmark Badge & Recall Points */}
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#faf9f5] border border-[#e8e6dc] shadow-xs">
             <Bookmark size={14} className="text-[#c96442]" />
@@ -227,6 +170,16 @@ export default function Reader({ bookId = 1, onBackToDeck }) {
               {readChapter} · #{bookmark}
             </span>
           </div>
+
+          {onOpenSummary && (
+            <button
+              onClick={onOpenSummary}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#faf9f5] border border-[#e8e6dc] hover:border-[#c96442]/60 hover:bg-[#f0eee6] transition-all cursor-pointer text-xs shadow-xs"
+            >
+              <Sparkles size={13} className="text-[#c96442]" />
+              <span className="font-['Plus_Jakarta_Sans'] font-semibold text-[#141413]">Recall Points</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -254,7 +207,7 @@ export default function Reader({ bookId = 1, onBackToDeck }) {
             </div>
 
             <span className="font-['Plus_Jakarta_Sans'] text-xs text-[#87867f]">
-              Reading Horizon: 68ch
+              Reading Horizon: {chunks.length} chunks
             </span>
           </div>
 
@@ -376,17 +329,24 @@ export default function Reader({ bookId = 1, onBackToDeck }) {
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
               <button
                 type="button"
-                onClick={() => setInput("What was M. Waldman's advice to Victor?")}
+                onClick={() => setInput(`Who are the key figures introduced in ${readChapter || 'this chapter'}?`)}
                 className="px-3 py-1.5 rounded-full bg-[#f0eee6] hover:bg-[#e8e6dc] text-[#5e5d59] hover:text-[#141413] text-[11px] font-['Plus_Jakarta_Sans'] font-medium whitespace-nowrap transition-colors cursor-pointer"
               >
-                "Waldman's advice?"
+                "Key figures here?"
               </button>
               <button
                 type="button"
-                onClick={() => setInput("Why does Victor avoid returning to Geneva?")}
+                onClick={() => setInput(`What is the central dilemma or dialogue in ${readChapter || 'this section'}?`)}
                 className="px-3 py-1.5 rounded-full bg-[#f0eee6] hover:bg-[#e8e6dc] text-[#5e5d59] hover:text-[#141413] text-[11px] font-['Plus_Jakarta_Sans'] font-medium whitespace-nowrap transition-colors cursor-pointer"
               >
-                "Why avoid Geneva?"
+                "Main conflict so far?"
+              </button>
+              <button
+                type="button"
+                onClick={() => setInput("What important developments have happened prior to my current bookmark?")}
+                className="px-3 py-1.5 rounded-full bg-[#f0eee6] hover:bg-[#e8e6dc] text-[#5e5d59] hover:text-[#141413] text-[11px] font-['Plus_Jakarta_Sans'] font-medium whitespace-nowrap transition-colors cursor-pointer"
+              >
+                "Recall up to bookmark"
               </button>
             </div>
             <form onSubmit={handleSendMessage} className="relative flex items-center">

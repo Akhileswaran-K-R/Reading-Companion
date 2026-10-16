@@ -15,6 +15,7 @@ class Book(Base):
     gutenberg_id = Column(Integer, nullable=True)
     file_path = Column(String, nullable=True)
     total_chunks = Column(Integer, default=0)
+    cover_image = Column(String, nullable=True)
     status = Column(String, default="processing")
 
 class Chunk(Base):

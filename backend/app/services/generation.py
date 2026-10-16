@@ -31,12 +31,12 @@ async def generate_answer(question: str, context_chunks: List[dict]):
         "stream": False,
         "options": {
             "temperature": 0.1,
-            "num_predict": settings.MAX_NEW_TOKENS
+            "num_predict": min(settings.MAX_NEW_TOKENS, 200)
         }
     }
     
     try:
-        async with httpx.AsyncClient(timeout=15.0) as client:
+        async with httpx.AsyncClient(timeout=60.0) as client:
             response = await client.post(f"{settings.OLLAMA_URL}/api/chat", json=payload)
             response.raise_for_status()
             data = response.json()

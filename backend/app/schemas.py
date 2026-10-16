@@ -10,6 +10,7 @@ class BookResponse(BaseModel):
     author: Optional[str]
     source: str
     gutenberg_id: Optional[int]
+    cover_image: Optional[str] = None
     status: str
 
     class Config:
@@ -51,10 +52,23 @@ class ChapterRecallPoint(BaseModel):
     chapter: str
     points: List[str]
 
+class ThemeItem(BaseModel):
+    name: str
+    desc: str
+
+class CharacterItem(BaseModel):
+    name: str
+    role: str
+
 class SummaryResponse(BaseModel):
     book_id: int
     title: Optional[str] = None
     author: Optional[str] = None
     overall_summary: str
     recall_points: List[ChapterRecallPoint]
+    themes: Optional[List[ThemeItem]] = []
+    characters: Optional[List[CharacterItem]] = []
+    is_bounded: bool = False
+    reading_status: Optional[str] = None
+    bookmark_chapter: Optional[str] = None
     cached: bool = True

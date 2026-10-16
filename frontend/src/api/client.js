@@ -68,7 +68,8 @@ export const askQuestion = (bookId, question) => fetchApi(`/qa/${bookId}`, {
   body: JSON.stringify({ question }),
 });
 
-export const getBookSummary = (bookId) => fetchApi(`/books/${bookId}/summary`);
+export const getBookSummary = (bookId, unlocked = false) => 
+  fetchApi(`/books/${bookId}/summary${unlocked ? '?unlocked=true' : ''}`);
 
 export const generateBookSummary = (bookId) => fetchApi(`/books/${bookId}/summary`, {
   method: 'POST',

@@ -7,8 +7,8 @@ from app.services.summary import get_or_generate_summary
 router = APIRouter(prefix="/api/books", tags=["summaries"])
 
 @router.get("/{book_id}/summary", response_model=SummaryResponse)
-async def get_book_summary(book_id: int, db: Session = Depends(get_db)):
-    summary = await get_or_generate_summary(db, book_id, force_regenerate=False)
+async def get_book_summary(book_id: int, unlocked: bool = False, db: Session = Depends(get_db)):
+    summary = await get_or_generate_summary(db, book_id, force_regenerate=False, unlocked=unlocked)
     if not summary:
         raise HTTPException(status_code=404, detail="Summary not found")
     return summary

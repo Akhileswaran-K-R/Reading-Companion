@@ -51,10 +51,10 @@ export default function LandingHeroView({
 
               <div>
                 <span className="font-serif text-5xl font-normal text-[#c96442] block">
-                  51%
+                  {featuredBook?.percent !== undefined ? `${featuredBook.percent}%` : '0%'}
                 </span>
                 <span className="font-['Plus_Jakarta_Sans'] text-xs font-bold uppercase tracking-wider text-[#5e5d59]">
-                  Active Folio: Ch. IV · pg. 52
+                  Active Folio: {featuredBook?.currentChapter || 'Chapter I'} · pg. {featuredBook?.page || 1}
                 </span>
               </div>
             </div>

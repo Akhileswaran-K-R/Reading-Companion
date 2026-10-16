@@ -42,12 +42,15 @@ async def add_book(book_in: BookCreate, background_tasks: BackgroundTasks, db: S
     if not text_url:
         raise HTTPException(status_code=400, detail="No plain text format found on Gutendex")
         
+    cover_image = formats.get("image/jpeg") or f"https://www.gutenberg.org/cache/epub/{book_in.gutenberg_id}/pg{book_in.gutenberg_id}.cover.medium.jpg"
+
     book = Book(
         title=title,
         author=author,
         source="gutenberg",
         gutenberg_id=book_in.gutenberg_id,
         file_path=text_url,
+        cover_image=cover_image,
         status="processing"
     )
     db.add(book)

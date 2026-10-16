@@ -1,36 +1,7 @@
-import React, { useState } from 'react';
-import { BookOpen, Sparkles, Plus, Upload, Search, X, ShieldCheck, BookmarkPlus, ChevronDown } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { BookOpen, Sparkles, Plus, Upload, Search, X, ShieldCheck, BookmarkPlus, BookmarkCheck, ChevronDown, CheckCircle2 } from 'lucide-react';
 import BookCover3D from '../components/BookCover3D';
-import { updateBookmark } from '../api/client';
-
-const BOOK_CHAPTERS_MAP = {
-  1: [
-    "Letter I", "Letter II", "Letter III", "Letter IV",
-    "Chapter I", "Chapter II", "Chapter III", "Chapter IV",
-    "Chapter V", "Chapter VI", "Chapter VII", "Chapter VIII",
-    "Chapter IX", "Chapter X", "Chapter XI", "Chapter XII",
-    "Chapter XIII", "Chapter XIV", "Chapter XV", "Chapter XVI",
-    "Chapter XVII", "Chapter XVIII", "Chapter XIX", "Chapter XX",
-    "Chapter XXI", "Chapter XXII", "Chapter XXIII", "Chapter XXIV"
-  ],
-  2: [
-    "Chapter I", "Chapter II", "Chapter III", "Chapter IV", "Chapter V",
-    "Chapter VI", "Chapter VII", "Chapter VIII", "Chapter IX", "Chapter X",
-    "Chapter XI", "Chapter XII", "Chapter XIII", "Chapter XIV", "Chapter XV",
-    "Chapter XX", "Chapter XXV", "Chapter XXX", "Chapter XXXV", "Chapter XL",
-    "Chapter XLV", "Chapter L", "Chapter LV", "Chapter LX", "Chapter LXI"
-  ],
-  3: [
-    "Preface", "Chapter I", "Chapter II", "Chapter III", "Chapter IV",
-    "Chapter V", "Chapter VI", "Chapter VII", "Chapter VIII", "Chapter IX",
-    "Chapter X", "Chapter XI", "Chapter XII", "Chapter XIII", "Chapter XIV",
-    "Chapter XV", "Chapter XVI", "Chapter XVII", "Chapter XVIII", "Chapter XIX", "Chapter XX"
-  ],
-  4: [
-    "Chapter I", "Chapter II", "Chapter III", "Chapter IV", "Chapter V",
-    "Chapter VI", "Chapter VII", "Chapter VIII", "Chapter IX"
-  ]
-};
+import { updateBookmark, getChapters, updateLibrary } from '../api/client';
 
 export default function SanctuaryDeckView({ 
   library, 
@@ -42,36 +13,70 @@ export default function SanctuaryDeckView({
   setSearchQuery, 
   searchResults, 
   onSearch, 
-  searching 
+  searching,
+  activeBookId,
+  onSetActiveBook
 }) {
   const [selectedQuickViewBook, setSelectedQuickViewBook] = useState(null);
   const [showAddDrawer, setShowAddDrawer] = useState(false);
   const [showBookmarkAdder, setShowBookmarkAdder] = useState(false);
   const [targetBookId, setTargetBookId] = useState(library[0]?.book?.id || 1);
-  const [targetChapter, setTargetChapter] = useState(library[0]?.chapter || 'Chapter IV');
-  const [targetPage, setTargetPage] = useState(library[0]?.page || 52);
+  const [targetChapter, setTargetChapter] = useState(library[0]?.chapter || 'Chapter I');
+  const [targetPage, setTargetPage] = useState(library[0]?.page || 1);
   const [bookmarkSuccess, setBookmarkSuccess] = useState(false);
+  const [chaptersCache, setChaptersCache] = useState({});
 
-  const getChaptersForBook = (bookId) => {
-    if (BOOK_CHAPTERS_MAP[bookId]) {
-      return BOOK_CHAPTERS_MAP[bookId];
+  useEffect(() => {
+    if (library && library.length > 0 && !targetBookId) {
+      setTargetBookId(library[0].book.id);
+      setTargetChapter(library[0].chapter || 'Chapter I');
+      setTargetPage(library[0].page || 1);
     }
-    return Array.from({ length: 15 }, (_, i) => `Chapter ${i + 1}`);
-  };
+  }, [library]);
 
-  const availableChapters = getChaptersForBook(targetBookId);
+  useEffect(() => {
+    if (targetBookId && !chaptersCache[targetBookId]) {
+      getChapters(targetBookId)
+        .then(res => {
+          if (res.data && res.data.length > 0) {
+            const chapNames = res.data.map(c => c.chapter).filter(Boolean);
+            setChaptersCache(prev => ({ ...prev, [targetBookId]: chapNames }));
+            if (!chapNames.includes(targetChapter) && chapNames.length > 0) {
+              setTargetChapter(chapNames[0]);
+            }
+          }
+        })
+        .catch(err => console.warn("Failed fetching chapters:", err));
+    }
+  }, [targetBookId]);
+
+  const availableChapters = chaptersCache[targetBookId] || [targetChapter || 'Chapter I'];
 
   const handleBookChange = (newBookId) => {
     setTargetBookId(newBookId);
     const item = library.find(i => i.book.id === newBookId);
-    const chaps = getChaptersForBook(newBookId);
-    if (item?.chapter && chaps.includes(item.chapter)) {
-      setTargetChapter(item.chapter);
-    } else {
-      setTargetChapter(chaps[0] || 'Chapter I');
-    }
     if (item?.page) {
       setTargetPage(item.page);
+    }
+    if (chaptersCache[newBookId]?.length > 0) {
+      const chaps = chaptersCache[newBookId];
+      if (item?.chapter && chaps.includes(item.chapter)) {
+        setTargetChapter(item.chapter);
+      } else {
+        setTargetChapter(chaps[0]);
+      }
+    } else {
+      getChapters(newBookId).then(res => {
+        if (res.data && res.data.length > 0) {
+          const chaps = res.data.map(c => c.chapter).filter(Boolean);
+          setChaptersCache(prev => ({ ...prev, [newBookId]: chaps }));
+          if (item?.chapter && chaps.includes(item.chapter)) {
+            setTargetChapter(item.chapter);
+          } else {
+            setTargetChapter(chaps[0]);
+          }
+        }
+      });
     }
   };
 
@@ -82,21 +87,33 @@ export default function SanctuaryDeckView({
     { bg: "#3c2a3e", accent: "#e5c07b" },
   ];
 
-  const handleSaveBookmark = (e) => {
+  const handleSaveBookmark = async (e) => {
     e.preventDefault();
     setBookmarkSuccess(true);
-    if (onUpdateBookmark) {
-      onUpdateBookmark(targetBookId, targetChapter, targetPage);
-    }
     try {
-      updateBookmark(targetBookId, { chapter: targetChapter, page: targetPage });
+      await updateBookmark(targetBookId, { chapter: targetChapter, page: targetPage });
     } catch (err) {
       console.warn("Bookmark update local sync:", err);
+    }
+    if (onUpdateBookmark) {
+      onUpdateBookmark(targetBookId, targetChapter, targetPage);
     }
     setTimeout(() => {
       setBookmarkSuccess(false);
       setShowBookmarkAdder(false);
     }, 900);
+  };
+
+  const handleStatusChange = async (bookId, newStatus) => {
+    try {
+      await updateLibrary(bookId, newStatus);
+      if (onUpdateBookmark) {
+        onUpdateBookmark(bookId, targetChapter, targetPage);
+      }
+      setSelectedQuickViewBook(prev => prev ? { ...prev, status: newStatus } : null);
+    } catch (e) {
+      console.warn("Status update error:", e);
+    }
   };
 
   return (
@@ -147,9 +164,9 @@ export default function SanctuaryDeckView({
               <BookCover3D
                 title={b.title}
                 author={b.author}
-                chapter={item.chapter || (isCompleted ? "Completed" : "Chapter IV")}
-                page={item.page || (isCompleted ? 340 : 52)}
-                totalPages={item.totalPages || 340}
+                chapter={item.chapter || (isCompleted ? "Completed" : "Chapter I")}
+                page={item.page || 1}
+                totalPages={item.totalPages || 300}
                 coverColor={styling.bg}
                 accentColor={styling.accent}
                 coverImage={b.cover_image}
@@ -161,7 +178,7 @@ export default function SanctuaryDeckView({
                 <span className={`inline-block font-['Plus_Jakarta_Sans'] text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full ${
                   isCompleted ? 'bg-[#e8e6dc] text-[#5e5d59]' : 'bg-[#ffdbd0] text-[#7e2c0e]'
                 }`}>
-                  {isCompleted ? '100% Recalled' : `${item.percent || 51}% Read`}
+                  {isCompleted ? '100% Recalled' : `${item.percent !== undefined ? item.percent : 0}% Read`}
                 </span>
                 
                 {/* Clicking on title opens the Quick Glance & Q&A Dossier */}
@@ -311,12 +328,43 @@ export default function SanctuaryDeckView({
               <div className="space-y-0.5">
                 <span className="text-[#5e5d59] block">Current Reading Horizon:</span>
                 <span className="text-sm font-bold text-[#141413]">
-                  {selectedQuickViewBook.chapter || "Chapter IV"} · pg. {selectedQuickViewBook.page || 52}
+                  {selectedQuickViewBook.chapter || "Chapter I"} · pg. {selectedQuickViewBook.page || 1}
                 </span>
               </div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#ffdbd0] text-[#7e2c0e] font-bold text-[11px]">
-                <ShieldCheck size={14} />
-                <span>Spoiler Shield Active</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                {selectedQuickViewBook.book.id === activeBookId ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-bold text-[11px] bg-[#fbeee6] border border-[#f0dfcc] text-[#c96442]">
+                    <BookmarkCheck size={13} />
+                    <span>Current Reading Book</span>
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onSetActiveBook) {
+                        onSetActiveBook(selectedQuickViewBook.book.id);
+                      }
+                      setSelectedQuickViewBook(prev => prev ? { ...prev, status: 'currently_reading' } : null);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-bold text-[11px] bg-[#faf9f5] border border-[#e8e6dc] hover:border-[#c96442] hover:text-[#c96442] text-[#141413] cursor-pointer transition-all shadow-xs"
+                  >
+                    <BookmarkPlus size={13} className="text-[#c96442]" />
+                    <span>Set as Current Book</span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => handleStatusChange(selectedQuickViewBook.book.id, selectedQuickViewBook.status === 'completed' ? 'currently_reading' : 'completed')}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-bold text-[11px] cursor-pointer transition-all ${
+                    selectedQuickViewBook.status === 'completed'
+                      ? 'bg-[#e8e6dc] text-[#5e5d59] hover:bg-[#dcdad0]'
+                      : 'bg-[#ffdbd0] text-[#7e2c0e] hover:bg-[#ffcabb]'
+                  }`}
+                >
+                  <CheckCircle2 size={13} />
+                  <span>{selectedQuickViewBook.status === 'completed' ? 'Mark In Progress' : 'Mark Completed'}</span>
+                </button>
               </div>
             </div>
 
@@ -324,7 +372,7 @@ export default function SanctuaryDeckView({
             <div className="space-y-2">
               <h4 className="font-serif text-lg text-[#141413]">Volume Summary & Key Takeaway</h4>
               <p className="font-serif text-base text-[#5e5d59] leading-relaxed">
-                {selectedQuickViewBook.note || "Deep exploration of existential themes and human ambition. Full sliding-window FAISS vector indexes are generated and ready for contextual Q&A."}
+                {selectedQuickViewBook.note || `Ingested volume with ${selectedQuickViewBook.book.total_chunks || 0} indexed chunks, grounded FAISS vector indexing, and spoiler-safe Q&A.`}
               </p>
             </div>
 

@@ -74,11 +74,11 @@ export default function ThreeScene() {
 
     // Animation Loop
     let animationFrameId;
-    let clock = new THREE.Clock();
+    const startTime = performance.now();
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
-      const elapsedTime = clock.getElapsedTime();
+      const elapsedTime = (performance.now() - startTime) * 0.001;
 
       targetX += (mouseX - targetX) * 0.05;
       targetY += (mouseY - targetY) * 0.05;

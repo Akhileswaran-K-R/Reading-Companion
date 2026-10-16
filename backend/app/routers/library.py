@@ -31,6 +31,7 @@ def get_library(db: Session = Depends(get_db)):
                 "source": book.source,
                 "status": book.status,
                 "total_chunks": book.total_chunks,
+                "cover_image": book.cover_image,
             },
             "status": rl.status,
             "chapter": chapter_str,

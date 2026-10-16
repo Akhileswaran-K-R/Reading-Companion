@@ -9,89 +9,40 @@ import { Feather, Layers, BarChart3 } from 'lucide-react';
 
 export default function App() {
   const [currentView, setCurrentView] = useState('landing');
-  const [activeBookId, setActiveBookId] = useState(1);
+  const [activeBookId, setActiveBookId] = useState(() => {
+    const saved = localStorage.getItem('bookie_active_book_id');
+    return saved ? Number(saved) : 1;
+  });
 
   const [library, setLibrary] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
 
-  const featuredBook = {
-    id: 1,
-    title: "Frankenstein; or, The Modern Prometheus",
-    author: "Mary Wollstonecraft Shelley",
-    currentChapter: "Chapter IV",
-    page: 52,
-    totalPages: 280,
-    coverArt: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=700"
-  };
+  const activeReadingItem = library.find(i => i.book.id === activeBookId)
+    || library.find(i => i.status === 'currently_reading') 
+    || library[0] 
+    || null;
 
-  const sampleBooks = [
-    {
-      book: {
-        id: 1,
-        title: "Frankenstein; or, The Modern Prometheus",
-        author: "Mary Wollstonecraft Shelley",
-        status: "ready",
-        total_chunks: 142,
-        cover_image: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=600"
-      },
-      status: "currently_reading",
-      chapter: "Chapter IV",
-      page: 52,
-      totalPages: 280,
-      percent: 51,
-      note: "Exploring the generation of life and chemistry at Ingolstadt."
-    },
-    {
-      book: {
-        id: 2,
-        title: "Pride and Prejudice",
-        author: "Jane Austen",
-        status: "ready",
-        total_chunks: 198,
-        cover_image: "https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&q=80&w=600"
-      },
-      status: "completed",
-      chapter: "Chapter LXI",
-      page: 340,
-      totalPages: 340,
-      percent: 100,
-      note: "Full chapter recall points and narrative synthesis ready."
-    },
-    {
-      book: {
-        id: 3,
-        title: "The Picture of Dorian Gray",
-        author: "Oscar Wilde",
-        status: "ready",
-        total_chunks: 110,
-        cover_image: "https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&fit=crop&q=80&w=600"
-      },
-      status: "to_read",
-      chapter: "Chapter I",
-      page: 1,
-      totalPages: 254,
-      percent: 0,
-      note: "Basil Hallward’s London studio and the philosophy of eternal youth."
-    },
-    {
-      book: {
-        id: 4,
-        title: "The Great Gatsby",
-        author: "F. Scott Fitzgerald",
-        status: "ready",
-        total_chunks: 120,
-        cover_image: "https://images.unsplash.com/photo-1506880018603-83d5b814b5a6?auto=format&fit=crop&q=80&w=600"
-      },
-      status: "currently_reading",
-      chapter: "Chapter III",
-      page: 64,
-      totalPages: 180,
-      percent: 35,
-      note: "The glittering summer parties of West Egg."
-    }
-  ];
+  const featuredBook = activeReadingItem ? {
+    id: activeReadingItem.book.id,
+    title: activeReadingItem.book.title,
+    author: activeReadingItem.book.author,
+    currentChapter: activeReadingItem.chapter || "Chapter I",
+    page: activeReadingItem.page || 1,
+    totalPages: activeReadingItem.totalPages || 300,
+    percent: activeReadingItem.percent || 0,
+    coverArt: activeReadingItem.book.cover_image || "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=700"
+  } : {
+    id: 1,
+    title: "Pride and Prejudice",
+    author: "Jane Austen",
+    currentChapter: "CHAPTER V.",
+    page: 1,
+    totalPages: 673,
+    percent: 3,
+    coverArt: "https://www.gutenberg.org/cache/epub/1342/pg1342.cover.medium.jpg"
+  };
 
   useEffect(() => {
     loadLibraryData();
@@ -102,16 +53,36 @@ export default function App() {
       const res = await getLibrary();
       if (res.data && res.data.length > 0) {
         setLibrary(res.data);
+        if (!res.data.some(i => i.book.id === activeBookId)) {
+          const firstCurrent = res.data.find(i => i.status === 'currently_reading') || res.data[0];
+          setActiveBookId(firstCurrent.book.id);
+          localStorage.setItem('bookie_active_book_id', String(firstCurrent.book.id));
+        }
       } else {
-        setLibrary(sampleBooks);
+        setLibrary([]);
       }
     } catch {
-      setLibrary(sampleBooks);
+      setLibrary([]);
+    }
+  };
+
+  const handleSetActiveBook = async (bookId) => {
+    setActiveBookId(bookId);
+    localStorage.setItem('bookie_active_book_id', String(bookId));
+    const item = library.find(i => i.book.id === bookId);
+    if (item && item.status !== 'currently_reading') {
+      try {
+        await updateLibrary(bookId, 'currently_reading');
+        await loadLibraryData();
+      } catch (err) {
+        console.warn("Could not update library status:", err);
+      }
     }
   };
 
   const handleSelectBook = (bookId, targetView) => {
     setActiveBookId(bookId);
+    localStorage.setItem('bookie_active_book_id', String(bookId));
     setCurrentView(targetView);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -237,7 +208,9 @@ export default function App() {
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#faf9f5] border border-[#e8e6dc] text-xs">
               <span className="w-2 h-2 rounded-full bg-[#c96442]"></span>
               <span className="font-['Plus_Jakarta_Sans'] text-[#5e5d59] font-medium">Session:</span>
-              <span className="font-['Plus_Jakarta_Sans'] text-[#141413] text-xs font-bold">Ch. IV · pg. 52</span>
+              <span className="font-['Plus_Jakarta_Sans'] text-[#141413] text-xs font-bold">
+                {featuredBook.currentChapter} · pg. {featuredBook.page}
+              </span>
             </div>
           </div>
         </div>
@@ -250,8 +223,8 @@ export default function App() {
             featuredBook={featuredBook}
             onEnterSanctuary={() => setCurrentView('sanctuary')}
             onOpenDashboard={() => setCurrentView('dashboard')}
-            booksReadCount={18}
-            totalGoal={24}
+            booksReadCount={library.filter(b => b.status === 'completed').length}
+            totalGoal={Math.max(12, library.length + 5)}
           />
         )}
 
@@ -267,6 +240,9 @@ export default function App() {
             searchResults={searchResults}
             onSearch={handleSearchGutenberg}
             searching={searching}
+            activeBookId={activeBookId}
+            onSetActiveBook={handleSetActiveBook}
+            onReloadLibrary={loadLibraryData}
           />
         )}
 
@@ -274,6 +250,9 @@ export default function App() {
           <DashboardView
             library={library}
             onOpenBook={handleSelectBook}
+            activeBookId={activeBookId}
+            onSetActiveBook={handleSetActiveBook}
+            onReloadLibrary={loadLibraryData}
           />
         )}
 
@@ -281,6 +260,7 @@ export default function App() {
           <Reader 
             bookId={activeBookId} 
             onBackToDeck={() => setCurrentView('sanctuary')} 
+            onOpenSummary={() => setCurrentView('summary')}
           />
         )}
 

@@ -12,8 +12,9 @@ async def generate_answer(question: str, context_chunks: List[dict]):
     
     context_text = ""
     for chunk in context_chunks:
-        chap_label = f"Chapter {chunk['chapter']}" if chunk['chapter'] else ""
-        page_label = f"pg. {chunk['page']}" if chunk['page'] else ""
+        chap_val = str(chunk['chapter']).strip() if chunk.get('chapter') else ""
+        chap_label = chap_val if chap_val.lower().startswith("chapter") else (f"Chapter {chap_val}" if chap_val else "")
+        page_label = f"pg. {chunk['page']}" if chunk.get('page') else ""
         label = ", ".join(filter(None, [chap_label, page_label]))
         if label:
             context_text += f"[{label}]\n{chunk['text']}\n\n"

@@ -40,7 +40,8 @@ export default function IngestView({ onReloadLibrary }) {
         navigate('/sanctuary');
       }, 1500);
     } catch (err) {
-      alert("Unable to ingest volume from Gutenberg. Ensure network access to gutendex is available.");
+      console.error("Ingestion failed:", err);
+      alert(err.message || "Unable to ingest volume from Gutenberg. Ensure network access to gutendex is available.");
     } finally {
       setIngestingId(null);
     }
@@ -62,7 +63,8 @@ export default function IngestView({ onReloadLibrary }) {
         navigate('/sanctuary');
       }, 1500);
     } catch (err) {
-      alert("Upload failed. Ensure the file is a valid EPUB or PDF.");
+      console.error("Upload failed:", err);
+      alert(err.message || "Upload failed. Ensure the file is a valid EPUB or PDF.");
     } finally {
       setUploading(false);
     }

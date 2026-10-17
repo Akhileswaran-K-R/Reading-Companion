@@ -8,6 +8,23 @@ from app.config import settings
 
 Base.metadata.create_all(bind=engine)
 
+def sync_db_schema():
+    """Ensure newly added model columns exist in SQLite database."""
+    with engine.connect() as conn:
+        for table in Base.metadata.sorted_tables:
+            try:
+                res = conn.exec_driver_sql(f"PRAGMA table_info({table.name})").fetchall()
+                existing_cols = {row[1] for row in res}
+                for col in table.columns:
+                    if col.name not in existing_cols:
+                        col_type = col.type.compile(engine.dialect)
+                        conn.exec_driver_sql(f"ALTER TABLE {table.name} ADD COLUMN {col.name} {col_type}")
+                conn.commit()
+            except Exception as e:
+                print(f"Schema sync warning on table {table.name}: {e}")
+
+sync_db_schema()
+
 app = FastAPI(title="Reading Companion API")
 
 app.add_middleware(

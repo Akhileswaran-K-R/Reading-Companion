@@ -16,7 +16,16 @@ async function fetchApi(endpoint, options = {}) {
   });
 
   if (!response.ok) {
-    throw new Error(`API error: ${response.status}`);
+    let errorDetail = `API error: ${response.status}`;
+    try {
+      const errJson = await response.json();
+      if (errJson && errJson.detail) {
+        errorDetail = typeof errJson.detail === 'string' ? errJson.detail : JSON.stringify(errJson.detail);
+      }
+    } catch {
+      // ignore JSON parse failure
+    }
+    throw new Error(errorDetail);
   }
 
   // To prevent rewriting all the React components, we mimic the Axios response signature

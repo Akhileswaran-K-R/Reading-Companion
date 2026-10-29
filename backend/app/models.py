@@ -47,4 +47,6 @@ class BookSummary(Base):
     book_id = Column(Integer, ForeignKey("books.id"), unique=True, index=True)
     overall_summary = Column(Text, nullable=False)
     recall_points = Column(Text, nullable=False)  # JSON-encoded chapter recall points
+    themes = Column(Text, nullable=True)          # JSON-encoded list of theme objects
+    characters = Column(Text, nullable=True)      # JSON-encoded list of character objects
     created_at = Column(String, nullable=True)
